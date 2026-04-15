@@ -127,13 +127,14 @@ def main_monitor():
                 align_items="start",
             ),
             width="min(1100px, 100%)",
-            height="calc(100vh - 4rem)",
+            height="100%",
             padding="2.5em",
             background_color="white",
             overflow_y="auto",
             border_radius="16px",
             box_shadow="0 20px 45px -18px rgba(0, 0, 0, 0.18)",
             border="1px solid #e2e8f0",
+            box_sizing="border-box",
         ),
         width="100%",
         height="100vh",
@@ -141,74 +142,102 @@ def main_monitor():
         background_color="#f8fafc",
         display="flex",
         justify_content="center",
-        align_items="flex-start",
+        align_items="stretch",
+        overflow="hidden",
+        box_sizing="border-box",
     )
 
 def index():
-    return rx.hstack(
-        # 왼쪽 사이드바
-        rx.vstack(
-            rx.heading("ABAP Spec Agent", size="7", margin_bottom="1em"),
-            sidebar_group_title("사용자 입력 방식", "input", State.toggle_input_group),
-            rx.cond(
-                State.expanded_sidebar_group == "input",
-                rx.vstack(
-                    sidebar_item(State.input_sections[0], href="#input-1", indent=True),
-                    sidebar_item(State.input_sections[1], href="#input-2", indent=True),
-                    sidebar_item(State.input_sections[2], href="#input-3", indent=True),
-                    sidebar_item(State.input_sections[3], href="#input-4", indent=True),
-                    sidebar_item(State.input_sections[4], href="#input-5", indent=True),
-                    sidebar_item(State.input_sections[5], href="#input-6", indent=True),
-                    spacing="0",
-                    width="100%",
-                    align_items="start",
-                ),
-                rx.fragment(),
-            ),
-            sidebar_group_title("Functional Spec & 개발매핑 입력서", "fs", State.toggle_fs_group),
-            rx.cond(
-                State.expanded_sidebar_group == "fs",
-                rx.vstack(
-                    sidebar_item(State.fs_sections[0], href="#fs-1", indent=True),
-                    sidebar_item(State.fs_sections[1], href="#fs-2", indent=True),
-                    sidebar_item(State.fs_sections[2], href="#fs-3", indent=True),
-                    sidebar_item(State.fs_sections[3], href="#fs-4", indent=True),
-                    sidebar_item(State.fs_sections[4], href="#fs-5", indent=True),
-                    sidebar_item(State.fs_sections[5], href="#fs-6", indent=True),
-                    sidebar_item(State.fs_sections[6], href="#fs-7", indent=True),
-                    sidebar_item(State.fs_sections[7], href="#fs-8", indent=True),
-                    sidebar_item(State.fs_sections[8], href="#fs-9", indent=True),
-                    sidebar_item(State.fs_sections[9], href="#fs-10", indent=True),
-                    spacing="0",
-                    width="100%",
-                    align_items="start",
-                ),
-                rx.fragment(),
-            ),
-            sidebar_group_title("Code 생성", "code", State.toggle_code_group),
-            rx.cond(
-                State.expanded_sidebar_group == "code",
-                rx.vstack(
-                    sidebar_item(State.code_sections[0], href="#code-1", indent=True),
-                    spacing="0",
-                    width="100%",
-                    align_items="start",
-                ),
-                rx.fragment(),
-            ),
-            width="360px",
-            height="100vh",
-            padding="2.25em 1.5em",
-            border_right="1px solid #e2e8f0",
-            align_items="start",
-            overflow_y="auto",
-            position="sticky",
-            top="0",
-            align_self="flex-start",
+    return rx.box(
+        # 전역(바깥) 스크롤 제거: body/html/root를 고정
+        rx.el.style(
+            """
+            html, body {
+              height: 100%;
+              overflow: hidden;
+              margin: 0;
+            }
+            #__next {
+              height: 100%;
+              overflow: hidden;
+            }
+            """.strip()
         ),
-        # 오른쪽 메인 모니터
-        main_monitor(),
-        width="100%", spacing="0"
+        rx.hstack(
+            # 왼쪽 사이드바
+            rx.vstack(
+                rx.heading("ABAP Spec Agent", size="7", margin_bottom="1em"),
+                sidebar_group_title("사용자 입력 방식", "input", State.toggle_input_group),
+                rx.cond(
+                    State.expanded_sidebar_group == "input",
+                    rx.vstack(
+                        sidebar_item(State.input_sections[0], href="#input-1", indent=True),
+                        sidebar_item(State.input_sections[1], href="#input-2", indent=True),
+                        sidebar_item(State.input_sections[2], href="#input-3", indent=True),
+                        sidebar_item(State.input_sections[3], href="#input-4", indent=True),
+                        sidebar_item(State.input_sections[4], href="#input-5", indent=True),
+                        sidebar_item(State.input_sections[5], href="#input-6", indent=True),
+                        spacing="0",
+                        width="100%",
+                        align_items="start",
+                    ),
+                    rx.fragment(),
+                ),
+                sidebar_group_title("Functional Spec & 개발매핑 입력서", "fs", State.toggle_fs_group),
+                rx.cond(
+                    State.expanded_sidebar_group == "fs",
+                    rx.vstack(
+                        sidebar_item(State.fs_sections[0], href="#fs-1", indent=True),
+                        sidebar_item(State.fs_sections[1], href="#fs-2", indent=True),
+                        sidebar_item(State.fs_sections[2], href="#fs-3", indent=True),
+                        sidebar_item(State.fs_sections[3], href="#fs-4", indent=True),
+                        sidebar_item(State.fs_sections[4], href="#fs-5", indent=True),
+                        sidebar_item(State.fs_sections[5], href="#fs-6", indent=True),
+                        sidebar_item(State.fs_sections[6], href="#fs-7", indent=True),
+                        sidebar_item(State.fs_sections[7], href="#fs-8", indent=True),
+                        sidebar_item(State.fs_sections[8], href="#fs-9", indent=True),
+                        sidebar_item(State.fs_sections[9], href="#fs-10", indent=True),
+                        spacing="0",
+                        width="100%",
+                        align_items="start",
+                    ),
+                    rx.fragment(),
+                ),
+                sidebar_group_title("Code 생성", "code", State.toggle_code_group),
+                rx.cond(
+                    State.expanded_sidebar_group == "code",
+                    rx.vstack(
+                        sidebar_item(State.code_sections[0], href="#code-1", indent=True),
+                        spacing="0",
+                        width="100%",
+                        align_items="start",
+                    ),
+                    rx.fragment(),
+                ),
+                width="360px",
+                height="100%",
+                padding="2.25em 1.5em",
+                border_right="1px solid #e2e8f0",
+                align_items="start",
+                overflow="hidden",
+                position="sticky",
+                top="0",
+                align_self="stretch",
+                box_sizing="border-box",
+            ),
+            # 오른쪽 메인 모니터
+            main_monitor(),
+            width="100%",
+            spacing="0",
+            height="100%",
+            overflow="hidden",
+        ),
+        position="fixed",
+        inset="0",
+        height="100vh",
+        width="100%",
+        overflow="hidden",
+        box_sizing="border-box",
     )
 
 app = rx.App(theme=rx.theme(appearance="light", accent_color="blue"))

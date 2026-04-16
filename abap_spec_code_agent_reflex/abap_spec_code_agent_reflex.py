@@ -69,7 +69,12 @@ def sidebar_group_title(text: str, group_key: str, on_click):
 def main_monitor():
     def section_block(section_id: str, title: str, content):
         return rx.box(
-            rx.heading(title, size="5", color="#2b6cb0", margin_top="0.25em"),
+            # FS 탭은 내부에서 좌/우 패널 타이틀을 이미 표시하므로, 상단 파란 섹션 타이틀은 숨김
+            rx.cond(
+                State.expanded_sidebar_group == "fs",
+                rx.fragment(),
+                rx.heading(title, size="5", color="#2b6cb0", margin_top="0.25em"),
+            ),
             content,
             id=section_id,
             width="100%",
@@ -96,15 +101,6 @@ def main_monitor():
                     State.expanded_sidebar_group == "fs",
                     rx.fragment(
                         section_block(State.fs_section_ids[0], State.fs_sections[0], view_fs_section_1()),
-                        section_block(State.fs_section_ids[1], State.fs_sections[1], view_fs_section_2()),
-                        section_block(State.fs_section_ids[2], State.fs_sections[2], view_fs_section_3()),
-                        section_block(State.fs_section_ids[3], State.fs_sections[3], view_fs_section_4()),
-                        section_block(State.fs_section_ids[4], State.fs_sections[4], view_fs_section_5()),
-                        section_block(State.fs_section_ids[5], State.fs_sections[5], view_fs_section_6()),
-                        section_block(State.fs_section_ids[6], State.fs_sections[6], view_fs_section_7()),
-                        section_block(State.fs_section_ids[7], State.fs_sections[7], view_fs_section_8()),
-                        section_block(State.fs_section_ids[8], State.fs_sections[8], view_fs_section_9()),
-                        section_block(State.fs_section_ids[9], State.fs_sections[9], view_fs_section_10()),
                     ),
                     rx.fragment(),
                 ),
@@ -115,20 +111,32 @@ def main_monitor():
                     ),
                     rx.fragment(),
                 ),
-                rx.button(
-                    "상세 분석 및 FS 생성 시작",
-                    on_click=State.handle_submit,
-                    color_scheme="blue",
-                    width="100%",
-                    margin_top="2em",
+                rx.cond(
+                    State.expanded_sidebar_group != "fs",
+                    rx.button(
+                        "상세 분석 및 FS 생성 시작",
+                        on_click=State.handle_submit,
+                        color_scheme="blue",
+                        width="100%",
+                        margin_top="2em",
+                    ),
+                    rx.fragment(),
                 ),
                 spacing="4",
                 width="100%",
                 align_items="start",
+                # FS 탭에서 하단 빈 공간이 생기지 않도록 flex로 꽉 채움
+                style={"height": "100%", "minHeight": "0"},
             ),
-            width="min(1100px, 100%)",
+            # FS 탭(2열)은 화면을 더 꽉 차게 사용
+            width=rx.cond(State.expanded_sidebar_group == "fs", "100%", "min(1100px, 100%)"),
+            max_width=rx.cond(
+                State.expanded_sidebar_group == "fs",
+                rx.cond(State.sidebar_collapsed, "calc(100vw - 2rem)", "calc(100vw - 360px - 2rem)"),
+                "1100px",
+            ),
             height="100%",
-            padding="2.5em",
+            padding=rx.cond(State.expanded_sidebar_group == "fs", "1.1em", "2.5em"),
             background_color="white",
             overflow_y="auto",
             border_radius="16px",
@@ -138,10 +146,10 @@ def main_monitor():
         ),
         width="100%",
         height="100vh",
-        padding="2rem",
+        padding=rx.cond(State.expanded_sidebar_group == "fs", "0.75rem", "2rem"),
         background_color="#f8fafc",
         display="flex",
-        justify_content="center",
+        justify_content=rx.cond(State.expanded_sidebar_group == "fs", "stretch", "center"),
         align_items="stretch",
         overflow="hidden",
         box_sizing="border-box",
@@ -161,69 +169,160 @@ def index():
               height: 100%;
               overflow: hidden;
             }
+
+            /* Markdown table: allow horizontal scroll without squishing */
+            .md-scroll {
+              overflow-x: auto;
+              max-width: 100%;
+            }
+            .md-scroll table {
+              width: max-content;
+              min-width: 100%;
+              border-collapse: collapse;
+            }
+
+            /* Markdown rendering polish */
+            .md-render {
+              color: #1f2937;
+              line-height: 1.55;
+              font-size: 0.95rem;
+            }
+            .md-render h1, .md-render h2, .md-render h3 {
+              margin: 0.4rem 0 0.35rem 0;
+              line-height: 1.25;
+              color: #1f2937;
+            }
+            .md-render h2 { font-size: 1.15rem; }
+            .md-render h3 { font-size: 1.05rem; }
+            .md-render p { margin: 0.35rem 0; }
+            .md-render ul, .md-render ol { margin: 0.35rem 0 0.35rem 1.2rem; }
+            .md-render li { margin: 0.15rem 0; }
+            .md-render hr {
+              border: 0;
+              border-top: 1px solid #eef2f7;
+              margin: 0.75rem 0;
+            }
+
+            .md-render table {
+              /* In md-render, prefer fitting container over max-content */
+              width: 100% !important;
+              table-layout: fixed;
+              border: 1px solid #eef2f7;
+              border-radius: 12px;
+              overflow: hidden;
+              background: white;
+              box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+            }
+            .md-render th, .md-render td {
+              border-bottom: 1px solid #f1f5f9;
+              padding: 0.4rem 0.55rem;
+              vertical-align: top;
+              text-align: center;
+              white-space: normal;
+              word-break: keep-all;
+              overflow-wrap: anywhere;
+              font-size: 0.9rem;
+            }
+            .md-render th {
+              background: #fafcff;
+              font-weight: 700;
+              color: #111827;
+            }
+            .md-render tr:last-child td { border-bottom: none; }
+
+            .md-render code {
+              background: #f1f5f9;
+              padding: 0.12rem 0.25rem;
+              border-radius: 6px;
+              font-size: 0.9em;
+            }
             """.strip()
         ),
         rx.hstack(
             # 왼쪽 사이드바
-            rx.vstack(
-                rx.heading("ABAP Spec Agent", size="7", margin_bottom="1em"),
-                sidebar_group_title("사용자 입력 방식", "input", State.toggle_input_group),
-                rx.cond(
-                    State.expanded_sidebar_group == "input",
-                    rx.vstack(
-                        sidebar_item(State.input_sections[0], href="#input-1", indent=True),
-                        sidebar_item(State.input_sections[1], href="#input-2", indent=True),
-                        sidebar_item(State.input_sections[2], href="#input-3", indent=True),
-                        sidebar_item(State.input_sections[3], href="#input-4", indent=True),
-                        sidebar_item(State.input_sections[4], href="#input-5", indent=True),
-                        sidebar_item(State.input_sections[5], href="#input-6", indent=True),
-                        spacing="0",
+            rx.box(
+                rx.vstack(
+                    rx.hstack(
+                        rx.box(
+                            rx.cond(
+                                State.sidebar_collapsed,
+                                rx.icon("panel-left-open", size=18, color="#4a5568"),
+                                rx.icon("panel-left-close", size=18, color="#4a5568"),
+                            ),
+                            on_click=State.toggle_sidebar,
+                            cursor="pointer",
+                            padding="0.35em",
+                            border_radius="10px",
+                            _hover={"background_color": "#edf2f7"},
+                        ),
+                        rx.cond(
+                            State.sidebar_collapsed,
+                            rx.fragment(),
+                            rx.heading("ABAP AGENT", size="7"),
+                        ),
+                        align_items="center",
                         width="100%",
-                        align_items="start",
+                        justify="start",
+                        spacing="3",
                     ),
-                    rx.fragment(),
-                ),
-                sidebar_group_title("Functional Spec & 개발매핑 입력서", "fs", State.toggle_fs_group),
-                rx.cond(
-                    State.expanded_sidebar_group == "fs",
-                    rx.vstack(
-                        sidebar_item(State.fs_sections[0], href="#fs-1", indent=True),
-                        sidebar_item(State.fs_sections[1], href="#fs-2", indent=True),
-                        sidebar_item(State.fs_sections[2], href="#fs-3", indent=True),
-                        sidebar_item(State.fs_sections[3], href="#fs-4", indent=True),
-                        sidebar_item(State.fs_sections[4], href="#fs-5", indent=True),
-                        sidebar_item(State.fs_sections[5], href="#fs-6", indent=True),
-                        sidebar_item(State.fs_sections[6], href="#fs-7", indent=True),
-                        sidebar_item(State.fs_sections[7], href="#fs-8", indent=True),
-                        sidebar_item(State.fs_sections[8], href="#fs-9", indent=True),
-                        sidebar_item(State.fs_sections[9], href="#fs-10", indent=True),
-                        spacing="0",
-                        width="100%",
-                        align_items="start",
+                    rx.cond(
+                        State.sidebar_collapsed,
+                        rx.fragment(),
+                        rx.fragment(
+                            sidebar_group_title("사용자 입력 방식", "input", State.toggle_input_group),
+                            rx.cond(
+                                State.expanded_sidebar_group == "input",
+                                rx.vstack(
+                                    sidebar_item(State.input_sections[0], href="#input-1", indent=True),
+                                    sidebar_item(State.input_sections[1], href="#input-2", indent=True),
+                                    sidebar_item(State.input_sections[2], href="#input-3", indent=True),
+                                    sidebar_item(State.input_sections[3], href="#input-4", indent=True),
+                                    sidebar_item(State.input_sections[4], href="#input-5", indent=True),
+                                    sidebar_item(State.input_sections[5], href="#input-6", indent=True),
+                                    spacing="0",
+                                    width="100%",
+                                    align_items="start",
+                                ),
+                                rx.fragment(),
+                            ),
+                            sidebar_group_title("Functional Spec & 개발매핑 입력서", "fs", State.toggle_fs_group),
+                            rx.cond(
+                                State.expanded_sidebar_group == "fs",
+                                rx.vstack(
+                                    sidebar_item(State.fs_sections[0], href="#fs-1", indent=True),
+                                    spacing="0",
+                                    width="100%",
+                                    align_items="start",
+                                ),
+                                rx.fragment(),
+                            ),
+                            sidebar_group_title("Code 생성", "code", State.toggle_code_group),
+                            rx.cond(
+                                State.expanded_sidebar_group == "code",
+                                rx.vstack(
+                                    sidebar_item(State.code_sections[0], href="#code-1", indent=True),
+                                    spacing="0",
+                                    width="100%",
+                                    align_items="start",
+                                ),
+                                rx.fragment(),
+                            ),
+                        ),
                     ),
-                    rx.fragment(),
+                    width="100%",
+                    height="100%",
+                    padding=rx.cond(State.sidebar_collapsed, "1.25em 0.75em", "2.25em 1.5em"),
+                    align_items="start",
+                    overflow="hidden",
                 ),
-                sidebar_group_title("Code 생성", "code", State.toggle_code_group),
-                rx.cond(
-                    State.expanded_sidebar_group == "code",
-                    rx.vstack(
-                        sidebar_item(State.code_sections[0], href="#code-1", indent=True),
-                        spacing="0",
-                        width="100%",
-                        align_items="start",
-                    ),
-                    rx.fragment(),
-                ),
-                width="360px",
+                width=rx.cond(State.sidebar_collapsed, "72px", "360px"),
                 height="100%",
-                padding="2.25em 1.5em",
                 border_right="1px solid #e2e8f0",
-                align_items="start",
-                overflow="hidden",
                 position="sticky",
                 top="0",
                 align_self="stretch",
                 box_sizing="border-box",
+                background_color="white",
             ),
             # 오른쪽 메인 모니터
             main_monitor(),
